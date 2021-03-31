@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package protofm.test;
+
+option go_package = ".;testproto";
+
+message Single { // A
+  string value = 1; // a
+}
+
+message RepeatedAndSingle { // B
+  Single single_value = 1; // a
+  repeated string repeated_value = 2; // b
+}
+
+message ComplexObject { // C
+  RepeatedAndSingle repeated_and_single_value = 1;
+  string single_value = 2; // c
+}
+
+message SimpleObject {
+  string pow = 1;
+  string wow = 2;
+  int32 foo = 3;
+  int32 baz = 4;
+}
+
+message NestedObject{
+  int32 pow = 1;
+  string wow = 2;
+  message FooBaz {
+    int32 foo = 1;
+    string baz = 2;
+  }
+  repeated FooBaz foo_baz = 3;
+  ComplexObject complex_object = 4; // c
+}
+
+message FakeFieldMaskRequest {
+  repeated string field_mask = 1;
+  int32 nr_responses = 2;
+  string ret_error = 3;
+}
