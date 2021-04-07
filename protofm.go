@@ -117,7 +117,6 @@ func (fm FieldMaskMap) Apply(msg proto.Message) {
 				// filter the message
 				mask.Apply(msgReflect.Get(descriptor).Message().Interface())
 			}
-
 		} else {
 			// message should not be kept
 			msgReflect.Clear(descriptor)

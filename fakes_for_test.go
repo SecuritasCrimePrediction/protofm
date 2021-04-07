@@ -15,16 +15,17 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 )
 
-////
+//
 // Fake service to test StreamServerInterceptor
-////
+//
 type fakeService struct {
 	testproto.UnimplementedTestServiceServer
 }
 
 var _ testproto.TestServiceServer = fakeService{}
 
-func (f fakeService) TestStreamFieldMask(req *testproto.FakeFieldMaskRequest, stream testproto.TestService_TestStreamFieldMaskServer) error {
+func (f fakeService) TestStreamFieldMask(req *testproto.FakeFieldMaskRequest,
+	stream testproto.TestService_TestStreamFieldMaskServer) error {
 	if req.GetRetError() != "" {
 		return fmt.Errorf(req.GetRetError())
 	}
@@ -37,7 +38,8 @@ func (f fakeService) TestStreamFieldMask(req *testproto.FakeFieldMaskRequest, st
 	return nil
 }
 
-func (f fakeService) TestStreamNoFieldMask(req *testproto.NoFieldMaskRequest, stream testproto.TestService_TestStreamNoFieldMaskServer) error {
+func (f fakeService) TestStreamNoFieldMask(req *testproto.NoFieldMaskRequest,
+	stream testproto.TestService_TestStreamNoFieldMaskServer) error {
 	if req.GetRetError() != "" {
 		return fmt.Errorf(req.GetRetError())
 	}
@@ -50,9 +52,9 @@ func (f fakeService) TestStreamNoFieldMask(req *testproto.NoFieldMaskRequest, st
 	return nil
 }
 
-////
+//
 // Fake server to test StreamServerInterceptor
-////
+//
 const bufSize = 1024 * 1024
 
 var lis *bufconn.Listener
@@ -84,9 +86,9 @@ type SimpleObjectStream interface {
 	Recv() (*testproto.SimpleObject, error)
 }
 
-////
+//
 // Fakes for testing UnaryServerInterceptor
-////
+//
 type FieldMaskForTest struct {
 	FieldMask     []string
 	Response      interface{}

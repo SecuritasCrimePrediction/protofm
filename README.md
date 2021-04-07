@@ -1,11 +1,23 @@
 # Proto field mask 
 
-Field masks can be used by API callers to list which fields in the response they are interested in, and let the server remove the rest of the fields to reduce the amount of data being transferred from the server.
-This library is created to be able to apply field masks not only on simple proto messages but also proto messages in lists.
+[![Go Reference](https://pkg.go.dev/badge/github.com/SecuritasCrimePrediction/protofm.svg)](https://pkg.go.dev/github.com/SecuritasCrimePrediction/protofm)
 
-# Field mask paths
-The field mask is created with a list of message field definitions which are dot notated strings.\
+[Field masks](https://developers.google.com/protocol-buffers/docs/reference/csharp/class/google/protobuf/well-known-types/field-mask) allows gRPC consumers to select fields of interest to keep in the response. This reduces the amount of data being transferred from the server to the client.
+
+This library extends the formal field mask definition by adding support for masking of fields inside repeated messages.
+
+This library has the following features:
+
+* Field mask application with list support (`protofm.Apply`)
+* Field mask validation (`protofm.Validate`)
+* gRPC hook for convention-based application of field masks.
+
+## Background
+
+A field mask is a list of strings with dot-separated field names from the response message.
+
 Example
+
 ```
 f {
   a : 22
@@ -17,7 +29,9 @@ f {
 }
 z: 8
 ```
-With a field mask `f.a, f.b.d` applied to the above message the result will be
+
+Applying the field mask `["f.a", "f.b.d"]` the above message gives:
+
 ```
 f {
   a : 22
@@ -26,34 +40,22 @@ f {
   }
 }
 ```
-If the list of paths is empty the message will not be filtered.
 
-## Validate
-There is a validation function for the field mask to validate it against a proto message.
-The validate function return `false` if one or more of the paths in the field mask are not available in the proto message.
-The validation function can be called in two ways, either by sending both proto message and field mask paths to the `ValidateMask` function
-```
-if valid := protofm.ValidateMask(pbMessage, []string{"f.a", "f.b.d"}); !valid {
-    fmt.Println("the field mask was not valid for this message type")
-}
-```
-or if you are going to use the field mask to apply to messages if it is valid you can first create a new instance of the `FieldMaskMap` and then validate it against a proto message
-```
-fm := protofm.NewMask([]string{"f.a", "f.b.d"})
-if valid := fm.Validate(pbMessage); !valid {
-    fmt.Println("the field mask was not valid for this message type")
-}
-```
+If a field mask is missing or empty, no filtering takes place.
 
-## Apply
-The functions to apply the field mask on a proto message does not validate the field mask against the message, the user should do this before applying.
+## Applying a field mask
 
-There are two ways of applying the field mask on a proto message, either by sending both proto message and field mask paths to the `ApplyMask` function
-```
+NOTE: it is **strongly recommended** to validate field masks before application to a Protobuf message. See `protofm.Validate` below.
+
+There are two ways of applying a field mask on a proto message, either by sending both proto message and field mask paths to the `ApplyMask` function...
+
+```go
 protofm.ApplyMask(pbMessage, []string{"f.a", "f.b.d"})
 ```
-or the preferred way is to first create a new instance of FieldMaskMap, validate it and then apply it on the proto message
-```
+
+...or the preferred way is to first create a new instance of FieldMaskMap, validate it and then apply it on the proto message:
+
+```go
 fm := protofm.NewMask([]string{"f.a", "f.b.d"})
 if valid := fm.Validate(pbMessage); !valid {
     fmt.Println("the field mask was not valid for this message type")
@@ -61,30 +63,32 @@ if valid := fm.Validate(pbMessage); !valid {
 fm.Apply(pbMessage)
 ```
 
-# gRPC hooks
-This library contains gRPC hooks that you can use for your gRPC servers to apply field masks on the responses from the endpoints.
-For responses to be filtered using field mask the request message need to implement the `FieldMaskable` interface which looks like this
-```
-type FieldMaskable interface {
-    GetFieldMask() []string
-}
-```
-For example a proto message definition of a request that will filter the response can look like this
-```
-message ExampleRequest {
-    repeated string field_mask = 1;
-    string some_other_field = 2;
-}
-```
-The responses will be filtered if
-* ... the interceptors are added to the gRPC server options
-* ... the request implements the `FieldMaskable` interface
-* ... the field mask paths are not empty
-* ... the field mask paths are valid on the response message
+## Validating a field mask
 
-There are interceptors for both Server stream and Unary endpoints.
-To add them to the gRPC server options add them like this
+`protofm.Validate` returns `false` if one or more of the paths in the field mask are not available in the proto message.
+
+Validate is called either with proto message and field mask paths to the `protofm.ValidateMask` function...
+
+```go
+if valid := protofm.ValidateMask(pbMessage, []string{"f.a", "f.b.d"}); !valid {
+    fmt.Println("the field mask was not valid for this message type")
+}
 ```
+
+...or with an existing `protofm.FieldMaskMap`:
+
+```go
+fm := protofm.NewMask([]string{"f.a", "f.b.d"})
+if valid := fm.Validate(pbMessage); !valid {
+    fmt.Println("the field mask was not valid for this message type")
+}
+```
+
+## gRPC hook
+
+To automatically validate and apply field masks when `.field_mask` is present and non-empty on the request, add the following interceptors:
+
+```go
 opts := []grpc.ServerOption{
     grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
         protofm.UnaryServerInterceptor(),
@@ -95,4 +99,21 @@ opts := []grpc.ServerOption{
 }
 
 grpcServer = grpc.NewServer(opts...)
+```
+
+Under the hood, this checks whether the incoming request is `FieldMaskable`:
+
+```protobuf
+type FieldMaskable interface {
+    GetFieldMask() []string
+}
+```
+
+Example proto definition that would trigger the interceptor:
+
+```protobuf
+message ExampleRequest {
+    repeated string field_mask = 1;
+    string some_other_field = 2;
+}
 ```

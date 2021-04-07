@@ -39,99 +39,43 @@ func Test_Filter(t *testing.T) {
 	}{
 		{
 			reason: "should be able to have all fields of the message in the filter",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			filter: []string{"pow", "wow", "foo", "baz"},
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			want:   &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 		}, {
 			reason: "should not matter which order the paths are in the filter",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			filter: []string{"baz", "foo", "pow", "wow"},
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			want:   &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 		}, {
 			reason: "should be able to have an empty filter and get all fields back",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			filter: []string{},
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			want:   &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 		}, {
 			reason: "should be able to have nil filter and get all fields back",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			filter: nil,
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			want:   &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 		}, {
 			reason: "should be able to get only selected fields",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Wow: "wow",
-				Foo: 1,
-				Baz: 2,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			filter: []string{"baz", "pow"},
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-				Baz: 2,
-			},
+			want:   &testproto.SimpleObject{Pow: "pow", Baz: 2},
 		}, {
 			reason: "should be able to specify filter for empty fields without errors",
-			msg: &testproto.SimpleObject{
-				Pow: "pow",
-				Foo: 1,
-			},
+			msg:    &testproto.SimpleObject{Pow: "pow", Foo: 1},
 			filter: []string{"baz", "pow"},
-			want: &testproto.SimpleObject{
-				Pow: "pow",
-			},
+			want:   &testproto.SimpleObject{Pow: "pow"},
 		}, {
 			reason: "should be able to handle complex structures",
 			msg: &testproto.NestedObject{
 				Pow: 1,
 				Wow: "wow",
-				FooBaz: []*testproto.NestedObject_FooBaz{{
-					Foo: 1,
-					Baz: "baz",
-				}, {
-					Foo: 1,
-					Baz: "baz",
-				}},
+				FooBaz: []*testproto.NestedObject_FooBaz{
+					{Foo: 1, Baz: "baz"},
+					{Foo: 1, Baz: "baz"},
+				},
 				ComplexObject: &testproto.ComplexObject{
 					RepeatedAndSingleValue: &testproto.RepeatedAndSingle{
 						SingleValue:   &testproto.Single{Value: "A"},
@@ -142,12 +86,8 @@ func Test_Filter(t *testing.T) {
 			},
 			filter: []string{"pow", "foo_baz.foo", "complex_object.repeated_and_single_value.repeated_value", "complex_object.single_value"},
 			want: &testproto.NestedObject{
-				Pow: 1,
-				FooBaz: []*testproto.NestedObject_FooBaz{{
-					Foo: 1,
-				}, {
-					Foo: 1,
-				}},
+				Pow:    1,
+				FooBaz: []*testproto.NestedObject_FooBaz{{Foo: 1}, {Foo: 1}},
 				ComplexObject: &testproto.ComplexObject{
 					RepeatedAndSingleValue: &testproto.RepeatedAndSingle{
 						RepeatedValue: []string{"A", "B"},
@@ -157,12 +97,18 @@ func Test_Filter(t *testing.T) {
 			},
 		},
 	} {
-		protofm.ApplyMask(tc.msg, tc.filter)
-		c := cmp.DeepEqual(tc.want, tc.msg, cmpopts.IgnoreUnexported(testproto.NestedObject{}, testproto.SimpleObject{}, testproto.NestedObject_FooBaz{}, testproto.ComplexObject{}, testproto.Single{}, testproto.RepeatedAndSingle{}))
+		t.Run(tc.reason, func(t *testing.T) {
+			protofm.ApplyMask(tc.msg, tc.filter)
+			c := cmp.DeepEqual(tc.want, tc.msg, cmpopts.IgnoreUnexported(
+				testproto.NestedObject{}, testproto.SimpleObject{},
+				testproto.NestedObject_FooBaz{}, testproto.ComplexObject{},
+				testproto.Single{}, testproto.RepeatedAndSingle{},
+			))
 
-		if !c().Success() {
-			t.Errorf("not the same\nwanted: %v\ngot: %v", tc.want, tc.msg)
-		}
+			if !c().Success() {
+				t.Errorf("not the same\nwanted: %v\ngot: %v", tc.want, tc.msg)
+			}
+		})
 	}
 }
 
