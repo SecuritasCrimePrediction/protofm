@@ -4,18 +4,23 @@ package protofm.test;
 
 option go_package = ".;testproto";
 
-message Single { // A
-  string value = 1; // a
+service TestService {
+  rpc TestStreamFieldMask(FakeFieldMaskRequest) returns (stream SimpleObject);
+  rpc TestStreamNoFieldMask(NoFieldMaskRequest) returns (stream SimpleObject);
 }
 
-message RepeatedAndSingle { // B
-  Single single_value = 1; // a
-  repeated string repeated_value = 2; // b
+message Single {
+  string value = 1;
 }
 
-message ComplexObject { // C
+message RepeatedAndSingle {
+  Single single_value = 1;
+  repeated string repeated_value = 2;
+}
+
+message ComplexObject {
   RepeatedAndSingle repeated_and_single_value = 1;
-  string single_value = 2; // c
+  string single_value = 2;
 }
 
 message SimpleObject {
@@ -33,11 +38,17 @@ message NestedObject{
     string baz = 2;
   }
   repeated FooBaz foo_baz = 3;
-  ComplexObject complex_object = 4; // c
+  ComplexObject complex_object = 4;
 }
 
 message FakeFieldMaskRequest {
   repeated string field_mask = 1;
   int32 nr_responses = 2;
   string ret_error = 3;
+  SimpleObject wanted_response = 4;
+}
+message NoFieldMaskRequest {
+  int32 nr_responses = 1;
+  string ret_error = 2;
+  SimpleObject wanted_response = 3;
 }
