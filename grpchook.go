@@ -8,13 +8,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// FieldMaskable must be implemented by the requests for the interceptors to apply the field map on the responses.
-type FieldMaskable interface {
-	GetFieldMask() []string
+// ReadMaskable must be implemented by the requests for the interceptors to apply the field map on the responses.
+type ReadMaskable interface {
+	GetReadMask() []string
 }
 
 // UnaryServerInterceptor will apply field masks on responses for unary endpoints if the request
-// * ... implement the FieldMaskable interface
+// * ... implement the ReadMaskable interface
 // * ... the field mask paths are not empty
 // * ... the field mask paths are valid on the response message
 func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
@@ -25,7 +25,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			return resp, err
 		}
 
-		if fm, ok := req.(FieldMaskable); ok {
+		if fm, ok := req.(ReadMaskable); ok {
 			// cast to proto message if possible
 			protoResp, isProtoResponse := resp.(proto.Message)
 			if !isProtoResponse {
@@ -33,7 +33,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			}
 
 			// filter the response
-			mask := NewMask(fm.GetFieldMask())
+			mask := NewMask(fm.GetReadMask())
 			if mask.Validate(protoResp) {
 				// only apply field mask if it is valid
 				mask.Apply(protoResp)
@@ -48,7 +48,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 }
 
 // StreamServerInterceptor will apply field masks on all streamed responses from Server streamed endpoints if the request
-// * ... implement the FieldMaskable interface
+// * ... implement the ReadMaskable interface
 // * ... the field mask paths are not empty
 // * ... the field mask paths are valid on the response message
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
@@ -96,8 +96,8 @@ func (w *streamWrapper) RecvMsg(m interface{}) error {
 		return nil
 	}
 
-	if sub, ok := protoMsg.(FieldMaskable); ok {
-		w.paths = sub.GetFieldMask()
+	if sub, ok := protoMsg.(ReadMaskable); ok {
+		w.paths = sub.GetReadMask()
 	}
 
 	return nil

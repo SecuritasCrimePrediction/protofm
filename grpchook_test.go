@@ -26,7 +26,7 @@ func Test_UnaryFilter(t *testing.T) {
 		wantErr  error
 	}{
 		{
-			reason: "should not filter if request does not implement FieldMaskable interface",
+			reason: "should not filter if request does not implement ReadMaskable interface",
 			req: struct {
 				Response       interface{}
 				WrongFieldMask []string
@@ -55,7 +55,7 @@ func Test_UnaryFilter(t *testing.T) {
 			wantResp: &ResponseStruct{A: "A", B: 42},
 			wantErr:  nil,
 		}, {
-			reason: "should filter if request implement FieldMaskable interface, response is proto message and service return no error",
+			reason: "should filter if request implement ReadMaskable interface, response is proto message and service return no error",
 			req: FieldMaskForTest{
 				FieldMask:     []string{"pow", "foo"},
 				Response:      &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
@@ -119,7 +119,7 @@ func Test_StreamFilter(t *testing.T) {
 		wantErr    error
 	}{
 		{
-			reason: "should not filter if request does not implement FieldMaskable interface",
+			reason: "should not filter if request does not implement ReadMaskable interface",
 			req: &testproto.NoFieldMaskRequest{
 				NrResponses:    3,
 				WantedResponse: &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
@@ -130,7 +130,7 @@ func Test_StreamFilter(t *testing.T) {
 		}, {
 			reason: "should not filter if service return error",
 			req: &testproto.FakeFieldMaskRequest{
-				FieldMask:      []string{"pow"},
+				ReadMask:       []string{"pow"},
 				NrResponses:    3,
 				RetError:       "return error",
 				WantedResponse: &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
@@ -139,9 +139,9 @@ func Test_StreamFilter(t *testing.T) {
 			wantNrResp: 0,
 			wantErr:    fmt.Errorf("return error"),
 		}, {
-			reason: "should filter if request implement FieldMaskable interface and service return no error",
+			reason: "should filter if request implement ReadMaskable interface and service return no error",
 			req: &testproto.FakeFieldMaskRequest{
-				FieldMask:      []string{"pow", "baz"},
+				ReadMask:       []string{"pow", "baz"},
 				NrResponses:    3,
 				WantedResponse: &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			},
@@ -151,7 +151,7 @@ func Test_StreamFilter(t *testing.T) {
 		}, {
 			reason: "should not filter if requested field mask is not valid",
 			req: &testproto.FakeFieldMaskRequest{
-				FieldMask:      []string{"pow", "doesNotExist"},
+				ReadMask:       []string{"pow", "doesNotExist"},
 				NrResponses:    3,
 				WantedResponse: &testproto.SimpleObject{Pow: "pow", Wow: "wow", Foo: 1, Baz: 2},
 			},

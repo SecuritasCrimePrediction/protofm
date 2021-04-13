@@ -42,7 +42,7 @@ message NestedObject{
 }
 
 message FakeFieldMaskRequest {
-  repeated string field_mask = 1;
+  repeated string read_mask = 1;
   int32 nr_responses = 2;
   string ret_error = 3;
   SimpleObject wanted_response = 4;

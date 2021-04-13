@@ -86,7 +86,7 @@ if valid := fm.Validate(pbMessage); !valid {
 
 ## gRPC hook
 
-To automatically validate and apply field masks when `.field_mask` is present and non-empty on the request, add the following interceptors:
+To automatically validate and apply field masks when `.read_mask` is present and non-empty on the request, add the following interceptors:
 
 ```go
 opts := []grpc.ServerOption{
@@ -101,11 +101,11 @@ opts := []grpc.ServerOption{
 grpcServer = grpc.NewServer(opts...)
 ```
 
-Under the hood, this checks whether the incoming request is `FieldMaskable`:
+Under the hood, this checks whether the incoming request is `ReadMaskable`:
 
 ```protobuf
-type FieldMaskable interface {
-    GetFieldMask() []string
+type ReadMaskable interface {
+    GetReaddMask() []string
 }
 ```
 
@@ -113,7 +113,7 @@ Example proto definition that would trigger the interceptor:
 
 ```protobuf
 message ExampleRequest {
-    repeated string field_mask = 1;
+    repeated string read_mask = 1;
     string some_other_field = 2;
 }
 ```

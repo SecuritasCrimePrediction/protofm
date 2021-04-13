@@ -96,7 +96,7 @@ type FieldMaskForTest struct {
 	NrResponses   int
 }
 
-func (f FieldMaskForTest) GetFieldMask() []string {
+func (f FieldMaskForTest) GetReadMask() []string {
 	return f.FieldMask
 }
 
