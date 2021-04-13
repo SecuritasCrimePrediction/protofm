@@ -105,7 +105,7 @@ Under the hood, this checks whether the incoming request is `ReadMaskable`:
 
 ```protobuf
 type ReadMaskable interface {
-    GetReaddMask() []string
+    GetReadMask() []string
 }
 ```
 
